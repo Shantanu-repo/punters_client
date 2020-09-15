@@ -39,8 +39,9 @@ class Scraper:
         self.request_lock = BoundedSemaphore(concurrent_requests)
 
     def fix_url(self, url, url_root=URL_ROOT):
+        print(url,url_root)
         """Ensure the specified URL is fully qualified by prepending url_root if necessary"""
-           """
+           
         if not re.search('[a-z]+://.*', url):
             if url.startswith('/') and url_root.endswith('/'):
                 url = url_root[:-1] + url
@@ -48,8 +49,7 @@ class Scraper:
                 url = url_root + url
             else:
                 url = url_root + '/' + url
-                """
-        url = url_root + '/' + url
+                
         return url
 
     def get_html(self, url, retry_count=0, max_retries=5):
