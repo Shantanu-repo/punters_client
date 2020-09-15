@@ -49,6 +49,7 @@ class Scraper:
             else:
                 url = url_root + '/' + url
                 """
+        url = url_root + '/' + url
         return url
 
     def get_html(self, url, retry_count=0, max_retries=5):
