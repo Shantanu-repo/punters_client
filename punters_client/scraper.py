@@ -42,7 +42,7 @@ class Scraper:
         print(url,url_root)
         """Ensure the specified URL is fully qualified by prepending url_root if necessary"""
            
-        if not re.search('[a-z]+://.*', url):
+        if not re.search('[a-z]+://.*', url.strip()):
             if url.startswith('/') and url_root.endswith('/'):
                 url = url_root[:-1] + url
             elif url.startswith('/') or url_root.endswith('/'):
