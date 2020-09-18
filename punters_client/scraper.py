@@ -10,7 +10,6 @@ import tzlocal
 from . import __version__
 from .html_utils import *
 
-
 class Scraper:
     """Provide web scraping functionality for www.punters.com.au"""
 
@@ -39,17 +38,14 @@ class Scraper:
         self.request_lock = BoundedSemaphore(concurrent_requests)
 
     def fix_url(self, url, url_root=URL_ROOT):
-        print(url,url_root)
         """Ensure the specified URL is fully qualified by prepending url_root if necessary"""
-           
-        if not re.search('[a-z]+://.*', url.strip()):
+        if not re.search('[a-z]+://.*', url):
             if url.startswith('/') and url_root.endswith('/'):
                 url = url_root[:-1] + url
             elif url.startswith('/') or url_root.endswith('/'):
                 url = url_root + url
             else:
                 url = url_root + '/' + url
-                
         return url
 
     def get_html(self, url, retry_count=0, max_retries=5):
@@ -113,6 +109,7 @@ class Scraper:
 
     def scrape_races(self, meet):
         """Scrape a list of races occurring at the specified meet"""
+        
 
         def parse_prize_pool(header_cell):
             groups = get_child_text_match_groups(header_cell, 'div.details-line span.capitalize', 'Total \$([\d.]+)([a-zA-Z])', index=0)
@@ -137,20 +134,22 @@ class Scraper:
             
             for table in html.cssselect('table.results-table'):
                 header_cell = get_child(table, 'thead tr th')
+                #print(header_cell)
                 if header_cell is not None:
 
                     race = {
                         'number':           parse_child_text_match_group(header_cell, 'b.capitalize', '(\d+)', int),
                         'distance':         parse_child_attribute(header_cell, 'span.distance abbr.conversion', 'data-value', int),
                         'prize_pool':       parse_prize_pool(header_cell),
-                        'track_condition':  get_child_text(header_cell, 'div.details-line span.capitalize', index=1),
+                        'track_condition':  get_child_text(header_cell, 'div.results-table__details span.a', index=1),
                         'start_time':       parse_start_time(header_cell),
-                        'url':              self.fix_url(get_child_attribute(header_cell, 'div.details-line span.capitalize a', 'href')),
+                        'url':              self.fix_url(get_child_attribute(header_cell, 'div.results-table__details span a', 'href')),
                         'group':            None,
                         'entry_conditions': None,
                         'track_circ':       None,
                         'track_straight':   None,
                         'track_rail':       None,
+                        'downloadlink':     None,
                         'scraper_version':  __version__
                     }
 
@@ -162,6 +161,11 @@ class Scraper:
                         race['entry_conditions'] = [span.text_content().replace('.', '').strip() for span in html2.cssselect('div.event-details span.entry-conditions-text span')]
 
                         spans = html2.cssselect('div.event-details-bottom div span')
+                        for row in html2.cssselect('div.left-menu__download-wrap'):
+                            race['downloadlink'] =  self.fix_url(get_child_attribute(row , 'a' , 'href', -1)) 
+                            
+                        #tst = get_child_attribute(spans2[3], 'href') 
+                        #print(tst)
                         for index in range(0, len(spans) - 1, 2):
                             key = 'track_' + spans[index].text_content().strip().lower()
 
@@ -303,7 +307,6 @@ class Scraper:
 
         html = self.get_html(profile['url'])
         if html is not None:
-            
             for ul in html.cssselect('ul.timeline'):
                 if 'TRIAL' not in ul.text_content().upper():
                     result_text = get_child_text(ul, 'span.formSummaryPosition')
